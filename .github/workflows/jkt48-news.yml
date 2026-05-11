@@ -2,7 +2,7 @@ name: JKT48 News Webhook
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "* * * * *"
   workflow_dispatch:
   push:
     branches:
