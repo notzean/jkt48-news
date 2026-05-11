@@ -1,35 +1,51 @@
 name: Update News Data
 
 on:
-  push:
-  schedule:
-    - cron: "* * * * *"
   workflow_dispatch:
+
+  schedule:
+    # Jalan tiap 5 menit, tapi offset supaya tidak pas menit ramai
+    - cron: "* * * * *"
+
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "last-news.json"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+    permissions:
+      contents: write
 
-      - name: Use Node.js 20
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run Update Script
+      - name: Run update script
         env:
           URL_API: ${{ secrets.URL_API }}
           URL_WEBHOOK: ${{ secrets.URL_WEBHOOK }}
         run: node index.js
 
-      - name: Update last-news.json on GitHub
-        uses: test-room-7/action-update-file@v1
-        with:
-          file-path: last-news.json
-          commit-msg: Update last-news.json
-          github-token: ${{ secrets.GH_TOKEN }}
-          branch: main
+      - name: Commit last-news.json
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+          git add last-news.json
+          git commit -m "Update last-news.json" || echo "No changes"
+          git push
