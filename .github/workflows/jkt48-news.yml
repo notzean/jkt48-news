@@ -2,11 +2,11 @@ name: JKT48 News Webhook
 
 on:
   schedule:
-    # Jalan tiap 5 menit
-    - cron: "* * * * *"
-
-  # Bisa dijalankan manual dari tab Actions
+    - cron: "*/5 * * * *"
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   send-news:
