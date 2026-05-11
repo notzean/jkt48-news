@@ -1,9 +1,42 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
+const fs = require("fs");
 require("dotenv").config();
 
-const url_api = process.env.URL_API
+const url_api = process.env.URL_API?.replace(/\/$/, "");
 const url_webhook = process.env.URL_WEBHOOK;
+const LAST_NEWS_FILE = "last-news.json";
+
+if (!url_api || !url_webhook) {
+    throw new Error("URL_API dan URL_WEBHOOK wajib diisi di Secrets / .env");
+}
+
+const getLastSentLink = () => {
+    if (!fs.existsSync(LAST_NEWS_FILE)) {
+        return null;
+    }
+
+    try {
+        const data = JSON.parse(fs.readFileSync(LAST_NEWS_FILE, "utf8"));
+        return data.lastLink || null;
+    } catch {
+        return null;
+    }
+};
+
+const saveLastSentLink = (link) => {
+    fs.writeFileSync(
+        LAST_NEWS_FILE,
+        JSON.stringify(
+            {
+                lastLink: link,
+                updatedAt: new Date().toISOString(),
+            },
+            null,
+            2
+        )
+    );
+};
 
 const normalizeText = (text = "") => {
     return text
@@ -169,7 +202,7 @@ const getLatestURL = async () => {
 const getDataNews = async () => {
     const latestURL = await getLatestURL();
 
-    const response = await axios.get(`${url_api}/pengumuman-mengenai-tiket-event-jkt48-request-hour-2026-setlist-best-40`);
+    const response = await axios.get(`${url_api}/${latestURL}`);
     const result = response.data?.data?.result;
 
     if (!result) {
@@ -238,7 +271,16 @@ const main = async () => {
     try {
         const news = await getDataNews();
 
+        const lastSentLink = getLastSentLink();
+
+        if (lastSentLink === news.link) {
+            console.log(`Berita sudah pernah dikirim: ${news.title}`);
+            return;
+        }
+
         await sendNewsToDiscord(news);
+
+        saveLastSentLink(news.link);
 
         console.log(`Berhasil mengirim berita: ${news.title}`);
     } catch (error) {
