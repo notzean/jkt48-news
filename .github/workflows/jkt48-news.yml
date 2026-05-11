@@ -1,55 +1,60 @@
-name: JKT48 News Webhook
+# This workflow will check latest JKT48 news and send it to Discord webhook
+
+name: Update News Data
 
 on:
-  schedule:
-    - cron: "* * * * *"
-  workflow_dispatch:
   push:
     branches:
       - main
+    paths-ignore:
+      - "last-news.json"
+
+  schedule:
+    # Kamu minta gaya lama.
+    # Catatan: GitHub tetap membatasi scheduled workflow minimal sekitar 5 menit.
+    - cron: "* * * * *"
+
+  workflow_dispatch:
 
 jobs:
-  send-news:
+  build:
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
-    concurrency:
-      group: jkt48-news-webhook
-      cancel-in-progress: true
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      # Checkout repository
+      - uses: actions/checkout@v2
         with:
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Setup Node.js environment
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          node-version: 20
-          cache: npm
+          node-version: ${{ matrix.node-version }}
 
+      # Install dependencies
       - name: Install dependencies
         run: npm ci
 
-      - name: Run JKT48 news script
+      # Run script to fetch news and send Discord webhook
+      - name: Run Update Script
         env:
           URL_API: ${{ secrets.URL_API }}
           URL_WEBHOOK: ${{ secrets.URL_WEBHOOK }}
         run: node index.js
 
-      - name: Commit last-news.json
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git add last-news.json
-
-          if git diff --cached --quiet; then
-            echo "Tidak ada perubahan pada last-news.json"
-          else
-            git commit -m "Update last sent news"
-            git push
-          fi
+      # Update last-news.json on GitHub
+      - name: Update last-news.json on GitHub
+        uses: test-room-7/action-update-file@v1
+        with:
+          file-path: last-news.json
+          commit-msg: Update last-news.json
+          github-token: ${{ secrets.GH_TOKEN }}
+          branch: main
