@@ -224,7 +224,7 @@ const sendNewsToDiscord = async (news) => {
     const parsed = parsingData(news.content_body);
     const chunks = chunkText(parsed.text);
 
-    const apiDetailUrl = `${url_api}/${news.link}`;
+    const apiDetailUrl = `https://jkt48.com/news/${news.link}`;
 
     for (let i = 0; i < chunks.length; i++) {
         const embed = {
