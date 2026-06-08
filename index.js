@@ -202,7 +202,8 @@ const getLatestURL = async () => {
 const getDataNews = async () => {
     const latestURL = await getLatestURL();
 
-    const response = await axios.get(`${url_api}/${latestURL}`);
+    // const response = await axios.get(`${url_api}/${latestURL}`);
+    const response = await axios.get(`https://jkt48.com/api/v1/news/pengumuman-mengenai-pre-order-jkt48-digital-photobook-jkt48-personal-meet-and-greet-festival-love-dr`);
     const result = response.data?.data?.result;
 
     if (!result) {
