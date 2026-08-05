@@ -11,6 +11,18 @@ if (!url_api || !url_webhook) {
     throw new Error("URL_API dan URL_WEBHOOK wajib diisi di Secrets / .env");
 }
 
+const jkt48Axios = axios.create({
+    baseURL: url_api,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Referer': 'https://jkt48.com/',
+        'Origin': 'https://jkt48.com',
+        'Cache-Control': 'no-cache'
+    }
+});
+
 const getLastSentLink = () => {
     if (!fs.existsSync(LAST_NEWS_FILE)) {
         return null;
@@ -184,7 +196,7 @@ const chunkText = (text, maxLength = 3800) => {
 };
 
 const getLatestURL = async () => {
-    const response = await axios.get(url_api);
+    const response = await jkt48Axios.get(url_api);
 
     const latestNews = Array.isArray(response.data?.data)
         ? response.data.data[0]
@@ -202,7 +214,7 @@ const getLatestURL = async () => {
 const getDataNews = async () => {
     const latestURL = await getLatestURL();
 
-    const response = await axios.get(`${url_api}/${latestURL}`);
+    const response = await jkt48Axios.get(`${url_api}/${latestURL}`);
     // const response = await axios.get(`https://jkt48.com/api/v1/news/pengumuman-mengenai-pre-order-jkt48-digital-photobook-jkt48-personal-meet-and-greet-festival-love-dr`);
     const result = response.data?.data?.result;
 
